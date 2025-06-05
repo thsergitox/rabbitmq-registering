@@ -63,6 +63,7 @@ class TestingConfig(Config):
     """Testing configuration."""
 
     TESTING = True
+    # Override database URI for testing - SQLite in memory
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
 
 

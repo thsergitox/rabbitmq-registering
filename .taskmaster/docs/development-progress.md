@@ -276,24 +276,61 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - Health endpoint reports "degraded" status (expected, as DB models and RabbitMQ consumers not yet implemented)
 - Ready for next tasks: database models and RabbitMQ integration
 
+## Task 10: Implement Python Validator Service - Database Models ✅
+
+### Completed Actions:
+
+- ✅ Created `models/persona.py` with complete Persona model:
+  - All fields mapped correctly: id, dni, nombre, apellidos, lugar_nac, ubigeo, direccion
+  - Added index on dni field for performance
+  - Implemented `__repr__` method for debugging
+  - Implemented `to_dict()` method for serialization
+- ✅ Created `models/persona_repository.py` with repository pattern:
+  - `find_by_dni()`: Find single persona by DNI
+  - `find_multiple_by_dni()`: Find multiple personas by DNI list
+  - `exists_by_dni()`: Check if DNI exists
+  - `check_multiple_exist()`: Check which DNIs exist from a list
+  - `count()`: Count total personas
+- ✅ Fixed SQLAlchemy compatibility issues:
+  - Upgraded to SQLAlchemy 2.0.35 for Python 3.13 compatibility
+  - Fixed `text()` import for raw SQL execution
+- ✅ Created comprehensive tests:
+  - `test_persona_model.py`: 5 unit tests for model functionality
+  - `test_database_integration.py`: 5 integration tests with MariaDB
+- ✅ Verified database connection and queries:
+  - Successfully connected to MariaDB
+  - Confirmed 1000 personas loaded in database
+  - Tested querying by single and multiple DNIs
+
+### Technical Decisions:
+- Used repository pattern for clean data access layer
+- Added index on dni column for query performance
+- Implemented efficient batch queries for multiple DNI lookups
+- Used pytest fixtures for test database sessions
+
+### Test Results:
+- All 5 unit tests passing
+- All 5 integration tests passing
+- Verified data integrity with existing database
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
 - **Java Service (LP1)**: ✅ Complete - Consumer, persistence, and publisher implemented
-- **Python Service (LP2)**: ✅ Basic Flask structure created, running on port 8082
+- **Python Service (LP2)**: ✅ Basic Flask structure and database models implemented
 - **Node.js Service (LP3)**: Dependencies defined
 
-## Next Task: Task 10 - Implement Python Validator Service - Database Models
+## Next Task: Task 11 - Implement Python Validator Service - RabbitMQ Consumer
 
-This task involves creating SQLAlchemy models for the Persona table.
+This task involves creating RabbitMQ consumer for validation requests.
 
 ### Next Steps:
-1. Create Persona model with all fields from the database
-2. Set up proper column mappings
-3. Test database connection and queries
-4. Verify model matches existing MariaDB schema
+1. Set up pika connection and consumer
+2. Consume messages from 'lp2.validate' queue
+3. Implement message deserialization
+4. Create validation request handler structure
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)
