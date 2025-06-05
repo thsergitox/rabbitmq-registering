@@ -2,11 +2,14 @@
 
 import os
 import logging
+import atexit
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config.config import config
+from sqlalchemy import text
 from config.database import DatabaseConnection
 from config.rabbitmq import RabbitMQConnection
+from consumer_thread import ConsumerThread
 from logging.config import dictConfig
 
 # Configure logging
@@ -31,9 +34,20 @@ dictConfig(
 
 logger = logging.getLogger(__name__)
 
-# Global connections
+# Global connections and consumer thread
 db_connection = None
 rabbitmq_connection = None
+consumer_thread = None
+
+
+def cleanup_consumer():
+    """Cleanup consumer thread on shutdown."""
+    global consumer_thread
+    if consumer_thread and consumer_thread.is_alive():
+        logger.info("Stopping consumer thread")
+        consumer_thread.stop()
+        consumer_thread.join(timeout=5)
+        logger.info("Consumer thread stopped")
 
 
 def create_app(config_name=None):
@@ -57,6 +71,17 @@ def create_app(config_name=None):
     try:
         db_connection.connect()
         rabbitmq_connection.connect()
+
+        # Start consumer thread if RabbitMQ is connected
+        global consumer_thread
+        if rabbitmq_connection.is_connected():
+            consumer_thread = ConsumerThread(rabbitmq_connection, db_connection)
+            consumer_thread.start()
+            logger.info("Started RabbitMQ consumer thread")
+
+            # Register cleanup
+            atexit.register(cleanup_consumer)
+
     except Exception as e:
         logger.error(f"Failed to initialize connections: {e}")
         # Don't fail app startup, connections can be retried
@@ -79,14 +104,18 @@ def create_app(config_name=None):
         health_status = {
             "service": "Validator Service (LP2)",
             "status": "healthy",
-            "checks": {"database": "unknown", "rabbitmq": "unknown"},
+            "checks": {
+                "database": "unknown",
+                "rabbitmq": "unknown",
+                "consumer": "unknown",
+            },
         }
 
         # Check database connection
         try:
             if db_connection and db_connection.engine:
                 with db_connection.engine.connect() as conn:
-                    conn.execute("SELECT 1")
+                    conn.execute(text("SELECT 1"))
                 health_status["checks"]["database"] = "healthy"
         except Exception as e:
             health_status["checks"]["database"] = f"unhealthy: {str(e)}"
@@ -101,6 +130,18 @@ def create_app(config_name=None):
                 health_status["status"] = "degraded"
         except Exception as e:
             health_status["checks"]["rabbitmq"] = f"unhealthy: {str(e)}"
+            health_status["status"] = "degraded"
+
+        # Check consumer thread
+        try:
+            if consumer_thread and consumer_thread.is_alive():
+                health_status["checks"]["consumer"] = "healthy"
+            else:
+                health_status["checks"]["consumer"] = "unhealthy: not running"
+                if health_status["checks"]["rabbitmq"] == "healthy":
+                    health_status["status"] = "degraded"
+        except Exception as e:
+            health_status["checks"]["consumer"] = f"unhealthy: {str(e)}"
             health_status["status"] = "degraded"
 
         status_code = 200 if health_status["status"] == "healthy" else 503

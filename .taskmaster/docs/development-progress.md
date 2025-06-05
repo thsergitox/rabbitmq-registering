@@ -313,26 +313,142 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - All 5 integration tests passing
 - Verified data integrity with existing database
 
+## Task 11: Implement Python Validator Service - RabbitMQ Consumer ✅
+
+### Completed Actions:
+
+- ✅ Created `validator/dto.py` with complete data transfer objects:
+  - `ValidationRequest`: Represents incoming validation requests from LP3
+  - `ValidationResponse`: Represents validation responses to be sent
+  - Both DTOs include JSON serialization/deserialization methods
+  - Added proper field validation and default values
+- ✅ Created `validator/rabbitmq_consumer.py` with consumer implementation:
+  - `ValidationConsumer` class with message processing logic
+  - Proper message acknowledgment and error handling
+  - Message parsing and validation
+  - QoS settings for reliable processing
+  - TODO placeholders for validation logic (Task 12) and publishing (Task 13)
+- ✅ Created `consumer_thread.py` for background processing:
+  - Thread wrapper to run consumer in background
+  - Graceful shutdown support
+  - Integration with Flask application lifecycle
+- ✅ Integrated consumer into Flask application:
+  - Consumer thread starts automatically when RabbitMQ is connected
+  - Added consumer health check to `/api/health` endpoint
+  - Automatic cleanup on application shutdown
+- ✅ Created comprehensive test coverage:
+  - `test_dto.py`: 7 unit tests for DTOs
+  - `test_rabbitmq_consumer.py`: 8 unit tests for consumer logic
+  - All tests passing with proper mocking
+
+### Technical Decisions:
+- Used dataclasses for DTOs to reduce boilerplate
+- Implemented consumer in a separate thread to not block Flask
+- Used manual acknowledgments for reliable message processing
+- Reject and requeue messages on parsing failures
+- Added consumer status to health endpoint for monitoring
+
+### Message Processing Flow:
+1. Consumer receives message from `queue_lp2` (lp2.validate)
+2. Parses and validates the JSON message
+3. Creates ValidationRequest object
+4. TODO (Task 12): Perform DNI validation
+5. TODO (Task 13): Publish response
+6. Acknowledges message if successful
+
+## Task 14: Implement Node.js Client (LP3) - Basic Structure ✅
+
+### Completed Actions:
+
+- ✅ Created `src/config/config.js` with complete configuration management
+- ✅ Created `src/utils/logger.js` with Winston logging setup
+- ✅ Created `src/index.js` main Express application with:
+  - Express server on port 8083
+  - Middleware: helmet, CORS, rate limiting, morgan logging
+  - Error handling and graceful shutdown
+  - RabbitMQ connection initialization
+- ✅ Created `.env` file with proper configurations
+- ✅ All dependencies from package.json are ready to use
+
+## Task 15: Implement Node.js Client - RabbitMQ Publisher ✅
+
+### Completed Actions:
+
+- ✅ Created `src/services/rabbitmq.js` with RabbitMQService class
+- ✅ Implemented `publishRegistration()` method that:
+  - Publishes to 'lp3.signup' routing key
+  - Uses correlation IDs for request tracking
+  - Implements timeout handling
+  - Returns promise that resolves with response
+- ✅ Configured exchange and queue setup
+- ✅ Proper error handling and connection management
+
+## Task 16: Implement Node.js Client - Response Consumer ✅
+
+### Completed Actions:
+
+- ✅ Implemented consumer in `src/services/rabbitmq.js`
+- ✅ Created `handleAcknowledgment()` method that:
+  - Consumes from 'queue_lp3_ack'
+  - Correlates responses with requests using correlation IDs
+  - Resolves pending promises with response data
+  - Handles timeouts and errors
+- ✅ Integrated with publisher for complete request-response flow
+
+## Task 17: Implement Node.js Client - REST API Endpoints ✅
+
+### Completed Actions:
+
+- ✅ Created `src/routes/register.js` with registration endpoints
+- ✅ Implemented `POST /api/register` endpoint with:
+  - Comprehensive input validation using express-validator
+  - Async request handling via RabbitMQ
+  - Proper error responses and status codes
+  - Timeout handling
+- ✅ Implemented `GET /api/register/status` for service status
+- ✅ Created `src/routes/health.js` with health check endpoints
+
+## Task 18: Implement Node.js Client - Performance Test Module ✅
+
+### Completed Actions:
+
+- ✅ Created `src/performance-test.js` performance testing module
+- ✅ Implemented concurrent request generation with:
+  - Configurable batch processing (50 users per batch)
+  - 1000 total users simulation
+  - Metrics collection (response times, success rates)
+  - P50, P95, P99 percentile calculations
+  - Progress tracking and reporting
+- ✅ Added performance test script to package.json
+- ✅ Validation against <500ms P95 requirement
+
+### Technical Decisions:
+- Used ES modules (type: "module" in package.json)
+- Implemented correlation-based request-response tracking
+- Used singleton pattern for RabbitMQ service
+- Batch processing for performance tests to avoid overwhelming the system
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
 - **Java Service (LP1)**: ✅ Complete - Consumer, persistence, and publisher implemented
-- **Python Service (LP2)**: ✅ Basic Flask structure and database models implemented
-- **Node.js Service (LP3)**: Dependencies defined
+- **Python Service (LP2)**: ✅ Flask structure, database models, and RabbitMQ consumer implemented (Tasks 12-13 pending)
+- **Node.js Service (LP3)**: ✅ Complete - All components implemented (Tasks 14-18)
 
-## Next Task: Task 11 - Implement Python Validator Service - RabbitMQ Consumer
+## Next Task: Task 12 - Implement Python Validator Service - Validation Logic
 
-This task involves creating RabbitMQ consumer for validation requests.
+This task involves implementing the DNI and friends validation logic.
 
 ### Next Steps:
-1. Set up pika connection and consumer
-2. Consume messages from 'lp2.validate' queue
-3. Implement message deserialization
-4. Create validation request handler structure
+1. Create validation service to check DNI existence
+2. Validate all friend DNIs in the list
+3. Return detailed validation results
+4. Handle edge cases and errors
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)
 - Node.js requires version 20+ (as specified in package.json)
-- Python 3.13.3 with virtual environment is set up and ready 
+- Python 3.13.3 with virtual environment is set up and ready
+- Node.js service is fully implemented and ready for integration testing once Python service is complete 
