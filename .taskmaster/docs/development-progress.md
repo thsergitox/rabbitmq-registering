@@ -142,24 +142,58 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - Used H2 database for testing with PostgreSQL compatibility mode
 - Implemented eager fetching queries for performance optimization
 
+## Task 6: Implement Java User Service - RabbitMQ Consumer ✅
+
+### Completed Actions:
+
+- ✅ Created `RegistrationRequest` DTO for incoming messages with all required fields:
+  - String nombre (name)
+  - String correo (email)
+  - Integer clave (password)
+  - Integer dni (national ID)
+  - Integer telefono (phone)
+  - List<Integer> friendsDni (list of friend DNIs)
+- ✅ Created `PersistenceResponse` DTO for response messages:
+  - Integer dni
+  - String status (SUCCESS/FAILED)
+  - String message
+  - String timestamp
+- ✅ Created `RabbitMQConsumer` service with:
+  - @RabbitListener annotation for queue_lp1
+  - Message validation for all required fields
+  - Proper error handling and logging
+  - TODO placeholders for tasks 7 and 8
+- ✅ Enabled RabbitMQ listeners by adding @EnableRabbit annotation
+- ✅ Created comprehensive unit tests:
+  - `RabbitMQConsumerTest`: Tests all validation scenarios
+  - `RabbitMQIntegrationTest`: Tests Spring context and configuration
+- ✅ All tests passing (27 total)
+- ✅ Successfully connected to RabbitMQ and listening on queue_lp1
+
+### Technical Decisions:
+- Used @RabbitListener for automatic message consumption
+- Implemented validation in the consumer to fail fast on invalid messages
+- Used Lombok for DTOs to reduce boilerplate
+- Structured consumer to easily integrate with persistence logic (task 7)
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
-- **Java Service (LP1)**: ✅ Basic structure complete, entities and repositories created
+- **Java Service (LP1)**: ✅ Basic structure complete, entities/repositories created, RabbitMQ consumer ready
 - **Python Service (LP2)**: Dependencies defined, database running
 - **Node.js Service (LP3)**: Dependencies defined
 
-## Next Task: Task 6 - Implement Java User Service - RabbitMQ Consumer
+## Next Task: Task 7 - Implement Java User Service - Persistence Logic
 
-This task involves creating RabbitMQ consumer to listen for user persistence requests.
+This task involves implementing the business logic to save users and friend relationships.
 
 ### Next Steps:
-1. Create RabbitMQ consumer service
-2. Setup message listener for 'lp1.persist' routing key
-3. Implement message deserialization
-4. Create proper error handling
+1. Create UserService with persistence logic
+2. Implement user creation with duplicate checking
+3. Implement friend relationship management
+4. Update RabbitMQConsumer to use UserService
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)
