@@ -109,24 +109,57 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - **Queues**: queue_lp1 (persist), queue_lp3_ack (response)
 - **Routing Keys**: lp1.persist, lp1.persisted
 
+## Task 5: Implement Java User Service - Database Entities ✅
+
+### Completed Actions:
+
+- ✅ Created `User` JPA entity with all required fields:
+  - Integer id (auto-generated)
+  - String nombre (name)
+  - String correo (email) with unique constraint
+  - Integer clave (password)
+  - Integer dni (national ID) with unique constraint
+  - Integer telefono (phone)
+- ✅ Implemented many-to-many friend relationship:
+  - Self-referencing relationship using `friend` join table
+  - Bidirectional relationship with `friends` and `friendOf` sets
+  - Helper methods `addFriend()` and `removeFriend()` for relationship management
+- ✅ Created `UserRepository` interface with custom queries:
+  - Find by correo (email) and dni
+  - Check existence by correo and dni
+  - Fetch users with friends eagerly loaded
+  - Find multiple users by DNI list
+- ✅ Created comprehensive unit tests:
+  - `UserTest`: Tests entity creation, friend relationships, builder pattern
+  - `UserRepositoryTest`: Tests all repository methods with H2 in-memory database
+- ✅ Configured test environment:
+  - Created `application-test.yml` for H2 database configuration
+  - All tests passing with proper transaction management
+
+### Technical Decisions:
+- Used Lombok for reducing boilerplate code
+- Excluded friends from equals/hashCode/toString to avoid circular references
+- Used H2 database for testing with PostgreSQL compatibility mode
+- Implemented eager fetching queries for performance optimization
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
-- **Java Service (LP1)**: ✅ Basic structure complete, running on port 8081
+- **Java Service (LP1)**: ✅ Basic structure complete, entities and repositories created
 - **Python Service (LP2)**: Dependencies defined, database running
 - **Node.js Service (LP3)**: Dependencies defined
 
-## Next Task: Task 5 - Implement Java User Service - Database Entities
+## Next Task: Task 6 - Implement Java User Service - RabbitMQ Consumer
 
-This task involves creating JPA entities for User and Friend relationships.
+This task involves creating RabbitMQ consumer to listen for user persistence requests.
 
 ### Next Steps:
-1. Create User entity with all required fields
-2. Create Friend entity for many-to-many relationship
-3. Create repository interfaces
-4. Write unit tests for entities
+1. Create RabbitMQ consumer service
+2. Setup message listener for 'lp1.persist' routing key
+3. Implement message deserialization
+4. Create proper error handling
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)
