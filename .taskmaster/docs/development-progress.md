@@ -176,24 +176,55 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - Used Lombok for DTOs to reduce boilerplate
 - Structured consumer to easily integrate with persistence logic (task 7)
 
+## Task 7: Implement Java User Service - Persistence Logic ✅
+
+### Completed Actions:
+
+- ✅ Created `UserService` with complete persistence logic:
+  - `persistUser()` method that handles the entire registration flow
+  - Duplicate checking by both DNI and email
+  - Transactional operations using @Transactional
+  - Friend relationship management with partial success handling
+  - Proper error handling and response building
+- ✅ Implemented friend relationship logic:
+  - `addFriendRelationships()` method to establish bidirectional relationships
+  - Graceful handling of non-existent friends (logs warning, continues)
+  - Returns count of successfully added friends
+- ✅ Updated `RabbitMQConsumer` to use UserService:
+  - Injected UserService dependency
+  - Replaced TODO with actual persistence call
+  - Added success/failure logging based on response
+- ✅ Created comprehensive test coverage:
+  - `UserServiceTest`: 11 unit tests covering all scenarios
+  - `UserServiceIntegrationTest`: 8 integration tests with real database
+  - Updated `RabbitMQConsumerTest` to mock UserService
+- ✅ All 48 tests passing
+
+### Technical Decisions:
+- Used @Transactional to ensure data consistency
+- Friend relationships continue even if some friends don't exist (partial success)
+- Response includes timestamp for audit trail
+- Integration tests use unique DNIs to avoid conflicts
+- Used @Rollback annotation to ensure test isolation
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
-- **Java Service (LP1)**: ✅ Basic structure complete, entities/repositories created, RabbitMQ consumer ready
+- **Java Service (LP1)**: ✅ Consumer ready, persistence logic complete
 - **Python Service (LP2)**: Dependencies defined, database running
 - **Node.js Service (LP3)**: Dependencies defined
 
-## Next Task: Task 7 - Implement Java User Service - Persistence Logic
+## Next Task: Task 8 - Implement Java User Service - Response Publisher
 
-This task involves implementing the business logic to save users and friend relationships.
+This task involves implementing RabbitMQ publisher to send persistence confirmations.
 
 ### Next Steps:
-1. Create UserService with persistence logic
-2. Implement user creation with duplicate checking
-3. Implement friend relationship management
-4. Update RabbitMQConsumer to use UserService
+1. Create RabbitMQ publisher service
+2. Send responses to queue_lp3_ack with routing key lp1.persisted
+3. Update RabbitMQConsumer to send responses after persistence
+4. Handle both success and failure scenarios
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)

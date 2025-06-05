@@ -1,5 +1,6 @@
 package com.registration.userservice.service;
 
+import com.registration.userservice.dto.PersistenceResponse;
 import com.registration.userservice.dto.RegistrationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class RabbitMQConsumer {
+
+    private final UserService userService;
 
     @RabbitListener(queues = "${rabbitmq.queues.persist}")
     public void consumeRegistrationRequest(RegistrationRequest request) {
@@ -27,8 +30,17 @@ public class RabbitMQConsumer {
                 log.debug("User has {} friends to register", request.getFriendsDni().size());
             }
             
-            // TODO: In task 7, implement the actual persistence logic
-            log.info("Registration request for DNI: {} queued for processing", request.getDni());
+            // Persist the user using UserService
+            PersistenceResponse response = userService.persistUser(request);
+            
+            if ("SUCCESS".equals(response.getStatus())) {
+                log.info("Successfully persisted user with DNI: {}", request.getDni());
+            } else {
+                log.warn("Failed to persist user with DNI: {} - Reason: {}", 
+                        request.getDni(), response.getMessage());
+            }
+            
+            // TODO: In task 8, send response via RabbitMQ publisher
             
         } catch (IllegalArgumentException e) {
             log.error("Invalid registration request for DNI: {} - {}", 
