@@ -14,6 +14,8 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,6 +23,9 @@ class RabbitMQConsumerTest {
 
     @Mock
     private UserService userService;
+    
+    @Mock
+    private RabbitMQPublisher rabbitMQPublisher;
 
     @InjectMocks
     private RabbitMQConsumer rabbitMQConsumer;
@@ -64,6 +69,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService).persistUser(validRequest);
+        verify(rabbitMQPublisher).publishPersistenceResponse(successResponse);
     }
 
     @Test
@@ -75,6 +81,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService).persistUser(validRequest);
+        verify(rabbitMQPublisher).publishPersistenceResponse(failureResponse);
     }
 
     @Test
@@ -87,6 +94,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService).persistUser(validRequest);
+        verify(rabbitMQPublisher).publishPersistenceResponse(successResponse);
     }
 
     @Test
@@ -99,6 +107,7 @@ class RabbitMQConsumerTest {
         
         // Should not call userService due to validation failure
         verify(userService, never()).persistUser(any());
+        verify(rabbitMQPublisher).publishErrorResponse(eq(null), contains("DNI is required"));
     }
 
     @Test
@@ -110,6 +119,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService, never()).persistUser(any());
+        verify(rabbitMQPublisher).publishErrorResponse(eq(12345678), contains("Name is required"));
     }
 
     @Test
@@ -121,6 +131,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService, never()).persistUser(any());
+        verify(rabbitMQPublisher).publishErrorResponse(eq(12345678), contains("Email is required"));
     }
 
     @Test
@@ -132,6 +143,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService, never()).persistUser(any());
+        verify(rabbitMQPublisher).publishErrorResponse(eq(12345678), contains("Password is required"));
     }
 
     @Test
@@ -143,6 +155,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService, never()).persistUser(any());
+        verify(rabbitMQPublisher).publishErrorResponse(eq(12345678), contains("Phone is required"));
     }
 
     @Test
@@ -155,6 +168,7 @@ class RabbitMQConsumerTest {
         assertDoesNotThrow(() -> rabbitMQConsumer.consumeRegistrationRequest(validRequest));
         
         verify(userService).persistUser(validRequest);
+        verify(rabbitMQPublisher).publishErrorResponse(eq(12345678), contains("Database connection error"));
     }
 
     @Test

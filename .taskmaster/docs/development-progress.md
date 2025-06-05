@@ -207,26 +207,95 @@ THIS DOCUMENT SHOULD BE UPDATED EVERY TIME A NEW TASK IS ADDED OR COMPLETED.
 - Integration tests use unique DNIs to avoid conflicts
 - Used @Rollback annotation to ensure test isolation
 
+## Task 8: Implement Java User Service - Response Publisher ✅
+
+### Completed Actions:
+
+- ✅ Created `RabbitMQPublisher` service with complete publishing logic:
+  - `publishPersistenceResponse()` method to send responses to RabbitMQ
+  - `publishErrorResponse()` helper method for error scenarios
+  - `publishSuccessResponse()` helper method for success scenarios
+  - Error handling to prevent disrupting main flow if publishing fails
+  - Uses RabbitTemplate with JSON message converter
+- ✅ Updated `RabbitMQConsumer` to use publisher:
+  - Injected RabbitMQPublisher dependency
+  - Replaced TODO comments with actual publishing calls
+  - Publishes success responses after successful persistence
+  - Publishes error responses for validation failures
+  - Publishes error responses for unexpected exceptions
+- ✅ Created comprehensive test coverage:
+  - `RabbitMQPublisherTest`: 5 unit tests covering all publishing scenarios
+  - `RabbitMQPublisherIntegrationTest`: 4 integration tests with Spring context
+  - Updated `RabbitMQConsumerTest` to verify publisher interactions
+- ✅ All 57 tests passing
+- ✅ Application running successfully on port 8081
+- ✅ Health endpoint responding at `http://localhost:8081/api/health`
+
+### Technical Decisions:
+- Publisher doesn't throw exceptions to avoid disrupting the main flow
+- Used builder pattern for creating response objects
+- Timestamp format uses ISO_LOCAL_DATE_TIME for consistency
+- Integration tests use mocked RabbitTemplate to avoid requiring actual RabbitMQ
+- Error messages include context (e.g., "Invalid request: " or "Unexpected error: ")
+
+### Message Flow Implemented:
+- Consumer receives message from `queue_lp1`
+- Validates and persists user data
+- Publisher sends response to exchange `registro_bus` with routing key `lp1.persisted`
+- Response will be routed to `queue_lp3_ack` for Node.js client consumption
+
+## Task 9: Implement Python Validator Service (LP2) - Basic Structure ✅
+
+### Completed Actions:
+
+- ✅ Created Flask application structure with proper configuration:
+  - `config/config.py`: Complete configuration for Flask, SQLAlchemy, and RabbitMQ
+  - `config/database.py`: Database connection manager with SQLAlchemy
+  - `config/rabbitmq.py`: RabbitMQ connection manager with pika
+  - `app.py`: Main Flask application with health check endpoints
+- ✅ Set up environment configuration:
+  - Created `.env` file from template
+  - Updated database credentials to match docker-compose settings
+- ✅ Resolved dependencies:
+  - Fixed flask-healthz incompatibility with Flask 3.0
+  - Upgraded SQLAlchemy to 2.0.35 for Python 3.13 compatibility
+  - Created virtual environment and installed all dependencies
+- ✅ Successfully started Flask application on port 8082
+- ✅ Health check endpoint responding at `http://localhost:8082/api/health`
+- ✅ Root endpoint responding at `http://localhost:8082/`
+
+### Technical Decisions:
+- Used Flask instead of FastAPI for consistency with requirements.txt
+- Removed flask-healthz due to Flask 3.0 incompatibility, implemented manual health checks
+- Used SQLAlchemy 2.0.35 for Python 3.13 compatibility
+- Configured proper connection pooling for both database and RabbitMQ
+- Set up logging with Flask's built-in logging configuration
+
+### Current Service Status:
+- Flask app running successfully on port 8082
+- Health endpoint reports "degraded" status (expected, as DB models and RabbitMQ consumers not yet implemented)
+- Ready for next tasks: database models and RabbitMQ integration
+
 ## Current Status
 
 - **RabbitMQ**: ✅ Running on ports 5672/15672
 - **PostgreSQL (BD1)**: ✅ Running with 300 users and 461 friend relationships
 - **MariaDB (BD2)**: ✅ Running with 1000 personas for DNI validation
-- **Java Service (LP1)**: ✅ Consumer ready, persistence logic complete
-- **Python Service (LP2)**: Dependencies defined, database running
+- **Java Service (LP1)**: ✅ Complete - Consumer, persistence, and publisher implemented
+- **Python Service (LP2)**: ✅ Basic Flask structure created, running on port 8082
 - **Node.js Service (LP3)**: Dependencies defined
 
-## Next Task: Task 8 - Implement Java User Service - Response Publisher
+## Next Task: Task 10 - Implement Python Validator Service - Database Models
 
-This task involves implementing RabbitMQ publisher to send persistence confirmations.
+This task involves creating SQLAlchemy models for the Persona table.
 
 ### Next Steps:
-1. Create RabbitMQ publisher service
-2. Send responses to queue_lp3_ack with routing key lp1.persisted
-3. Update RabbitMQConsumer to send responses after persistence
-4. Handle both success and failure scenarios
+1. Create Persona model with all fields from the database
+2. Set up proper column mappings
+3. Test database connection and queries
+4. Verify model matches existing MariaDB schema
 
 ### Notes:
 - Java requires JDK 21 (as specified in pom.xml)
 - Node.js requires version 20+ (as specified in package.json)
-- Python 3.13.3 is installed and ready 
+- Python 3.13.3 with virtual environment is set up and ready 

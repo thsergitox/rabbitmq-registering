@@ -3,7 +3,7 @@ flask==3.0.0
 flask-cors==4.0.0
 
 # Database
-sqlalchemy==2.0.23
+sqlalchemy==2.0.35
 pymysql==1.1.0
 cryptography==41.0.7  # Required for pymysql
 
@@ -33,4 +33,4 @@ mypy==1.7.1
 gunicorn==21.2.0
 
 # Health checks
-flask-healthz==0.0.3 
+# flask-healthz==0.0.3  # Commented out due to Flask 3.0 incompatibility 

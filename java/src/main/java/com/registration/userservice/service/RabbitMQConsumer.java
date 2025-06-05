@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class RabbitMQConsumer {
 
     private final UserService userService;
+    private final RabbitMQPublisher rabbitMQPublisher;
 
     @RabbitListener(queues = "${rabbitmq.queues.persist}")
     public void consumeRegistrationRequest(RegistrationRequest request) {
@@ -33,6 +34,9 @@ public class RabbitMQConsumer {
             // Persist the user using UserService
             PersistenceResponse response = userService.persistUser(request);
             
+            // Publish the response to RabbitMQ
+            rabbitMQPublisher.publishPersistenceResponse(response);
+            
             if ("SUCCESS".equals(response.getStatus())) {
                 log.info("Successfully persisted user with DNI: {}", request.getDni());
             } else {
@@ -40,16 +44,18 @@ public class RabbitMQConsumer {
                         request.getDni(), response.getMessage());
             }
             
-            // TODO: In task 8, send response via RabbitMQ publisher
-            
         } catch (IllegalArgumentException e) {
             log.error("Invalid registration request for DNI: {} - {}", 
                      request.getDni(), e.getMessage());
-            // TODO: In task 8, send error response via RabbitMQ
+            // Send error response via RabbitMQ
+            rabbitMQPublisher.publishErrorResponse(request.getDni(), 
+                    "Invalid request: " + e.getMessage());
         } catch (Exception e) {
             log.error("Error processing registration request for DNI: {}", 
                      request.getDni(), e);
-            // TODO: In task 8, send error response via RabbitMQ
+            // Send error response via RabbitMQ
+            rabbitMQPublisher.publishErrorResponse(request.getDni(), 
+                    "Unexpected error: " + e.getMessage());
         }
     }
     
