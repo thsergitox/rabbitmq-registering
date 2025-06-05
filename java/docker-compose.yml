@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres-bd1:
+    image: postgres:16-alpine
+    container_name: registration-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: registration_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./init-scripts/02-fix-schema.sql:/docker-entrypoint-initdb.d/02-fix-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d registration_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - registration_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    name: registration_postgres_data
+
+networks:
+  registration_network:
+    name: registration_network
+    driver: bridge 

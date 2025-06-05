@@ -1,0 +1,49 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Taskmaster files (keep the structure but not generated files)
+.taskmaster/cache/
+.taskmaster/logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Docker volumes (local development)
+postgres_data/
+mariadb_data/
+rabbitmq_data/
+
+# Dependency directories
+node_modules/
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Task files
+tasks.json
+tasks/ 

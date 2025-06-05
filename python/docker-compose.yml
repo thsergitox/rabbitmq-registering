@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mariadb-bd2:
+    image: mariadb:11
+    container_name: registration-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: mariadb123
+      MYSQL_DATABASE: dni_db
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass123
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - registration_network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mariadb_data:
+    name: registration_mariadb_data
+
+networks:
+  registration_network:
+    external: true
+    name: registration_network 

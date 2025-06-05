@@ -1,0 +1,16 @@
+# Development override configuration
+# This file is automatically loaded by docker-compose in development
+
+version: '3.8'
+
+services:
+  postgres-bd1:
+    environment:
+      # Enable query logging in development
+      POSTGRES_INITDB_ARGS: "-c log_statement=all"
+    # Mount additional development volumes
+    volumes:
+      - ./backup:/backup
+    # Expose PostgreSQL for external tools like pgAdmin
+    ports:
+      - "5432:5432" 

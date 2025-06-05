@@ -1,0 +1,155 @@
+Product Requirements Document: Distributed User Registration System with RabbitMQ
+
+PROJECT OVERVIEW:
+Development of a distributed system for user registration with validation using RabbitMQ as middleware, connecting three applications in different programming languages (Java, Python, Node.js) with different databases.
+
+BUSINESS REQUIREMENTS:
+- Validate user DNI (national ID) before registration
+- Ensure friend relationships are valid (friends must exist in the system)
+- Support high-volume concurrent registrations
+- Provide performance metrics and monitoring
+
+TECHNICAL ARCHITECTURE:
+
+Components:
+1. LP3 (Node.js) - Client Application
+   - Port: 8083
+   - Simulates 1000 concurrent registration requests
+   - Evaluates system performance
+   - Single registration interface
+
+2. LP2 (Python) - DNI Validator Service
+   - Port: 8082
+   - Database: MariaDB (BD2)
+   - Validates DNI existence
+   - Validates friend relationships
+
+3. LP1 (Java) - User Persistence Service
+   - Port: 8081
+   - Database: PostgreSQL (BD1)
+   - Stores validated user data
+   - Manages friend relationships
+
+4. RabbitMQ - Message Broker
+   - Port: 5672 (AMQP)
+   - Port: 15672 (Management UI)
+   - Exchange: registro_bus (direct)
+
+DATA MODELS:
+
+BD1 (PostgreSQL):
+- users table: id, nombre, correo, clave, dni, telefono
+- friend table: user_id, friend_id
+
+BD2 (MariaDB):
+- persona table: id, dni, nombre, apellidos, lugar_nac, ubigeo, direccion
+
+MESSAGE FLOW:
+1. LP3 → RabbitMQ: User registration request (lp3.signup)
+2. RabbitMQ → LP2: DNI validation request (lp2.validate)
+3. LP2 → RabbitMQ: Validation result (lp2.query.ok/fail)
+4. If OK: RabbitMQ → LP1: Persist user (lp1.persist)
+5. LP1 → RabbitMQ: Persistence confirmation (lp1.persisted)
+6. RabbitMQ → LP3: Final acknowledgment (lp3.ack)
+
+FUNCTIONAL REQUIREMENTS:
+
+FR1: User Registration Flow
+- Client submits: nombre, correo, clave, dni, telefono, amigos_frecuentes[]
+- System validates DNI exists in BD2
+- System validates all friends exist in BD2
+- If valid, save to BD1 with friend relationships
+- Return success/failure to client
+
+FR2: DNI Validation
+- Check DNI exists in persona table
+- Validate all friend DNIs exist
+- Return detailed validation results
+
+FR3: Data Persistence
+- Store user data in PostgreSQL
+- Create friend relationships
+- Ensure transactional integrity
+
+FR4: Performance Testing
+- Support 1000 concurrent registrations
+- Measure response times
+- Generate performance report
+
+FR5: Error Handling
+- Handle validation failures gracefully
+- Provide meaningful error messages
+- Implement retry mechanisms
+
+NON-FUNCTIONAL REQUIREMENTS:
+
+NFR1: Performance
+- Handle 1000 concurrent requests
+- Response time < 500ms per request
+- Thread pooling for concurrency
+
+NFR2: Reliability
+- Message durability in RabbitMQ
+- Database transaction support
+- Graceful error recovery
+
+NFR3: Scalability
+- Containerized deployment
+- Independent scaling of services
+- Queue-based load distribution
+
+NFR4: Monitoring
+- RabbitMQ management UI
+- Application logs
+- Performance metrics
+
+NFR5: Security
+- Input validation
+- SQL injection prevention
+- Secure password storage
+
+DEPLOYMENT REQUIREMENTS:
+
+DR1: Containerization
+- Docker compose for each service
+- Separate virtual machines capability
+- Network isolation
+
+DR2: Database Initialization
+- Automatic schema creation
+- Sample data loading
+- Connection pooling
+
+DR3: Service Discovery
+- Environment-based configuration
+- Health checks
+- Auto-reconnection
+
+TESTING REQUIREMENTS:
+
+TR1: Unit Tests
+- Service-specific tests
+- Mock external dependencies
+- >80% code coverage
+
+TR2: Integration Tests
+- End-to-end flow testing
+- Error scenario testing
+- Performance benchmarks
+
+TR3: Load Testing
+- 1000 concurrent users simulation
+- Measure throughput
+- Identify bottlenecks
+
+DELIVERABLES:
+1. Three microservices (Java, Python, Node.js)
+2. Docker compose files for deployment
+3. RabbitMQ configuration
+4. Database schemas and sample data
+5. Performance test suite
+6. System architecture diagram
+7. Protocol sequence diagram
+8. Deployment documentation
+9. Performance analysis report
+10. README with setup instructions 
