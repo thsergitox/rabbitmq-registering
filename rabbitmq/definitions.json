@@ -1,0 +1,85 @@
+{
+  "rabbit_version": "3.13.0",
+  "users": [
+    {
+      "name": "admin",
+      "password_hash": "gTkbW8yAkSWBuF7PBQFwL0J9x9tYy9T+QVd8pbr0u0Y2OLF0",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"]
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "registro_bus",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "queue_lp2",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "queue_lp1",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "queue_lp3_ack",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "registro_bus",
+      "vhost": "/",
+      "destination": "queue_lp2",
+      "destination_type": "queue",
+      "routing_key": "lp2.validate",
+      "arguments": {}
+    },
+    {
+      "source": "registro_bus",
+      "vhost": "/",
+      "destination": "queue_lp1",
+      "destination_type": "queue",
+      "routing_key": "lp1.persist",
+      "arguments": {}
+    },
+    {
+      "source": "registro_bus",
+      "vhost": "/",
+      "destination": "queue_lp3_ack",
+      "destination_type": "queue",
+      "routing_key": "lp3.ack",
+      "arguments": {}
+    }
+  ]
+} 
