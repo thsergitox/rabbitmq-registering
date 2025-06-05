@@ -1,0 +1,46 @@
+
+Se tiene una BD1 en LP1 en el que se tienen que guardar necesariamente los datos de:
+id: 1 (definido por ud)
+nombre: fulano
+correo: fulano@memail.com
+clave: 1234
+dni: 20453629
+telefono: 89674539
+amigo(s) frecuente(s): rosa juan lucas (pueden ser cero o varios amigos, sus ids se
+encuentren en la misma BD1)
+Se tiene una BD2 DNI en el LP2 con los campos:
+id: (definido por ud)
+dni:
+nombre:
+apellidos:
+lugar de nacimiento:
+ubigeo:
+dirección: 
+El cliente ingresa los datos en el SO2 con el LP3 y mediante el middleware tiene que
+validar si existe primero en la BD2 DNI (también tiene que validar si existen sus amigos),
+para que luego pueda guardar la información en la BD1.
+nombre:
+correo:
+clave:
+dni:
+teléfono:
+amigo(s) frecuente(s): (pueden ser o varios amigos)
+Se tienen 3 o más nodos con:
+Sistema Operativos, SO1 y SO2, donde SO1 <> SO2
+Bases de Datos, BD1 y BD2, donde BD1 <> BD2
+Lenguajes de Programación, LP1, LP2 y LP3, donde LP1<> LP2 <> LP3
+Donde cada uno de los LP1, LP2, LP3 se encuentran en un nodo independiente.
+El Middleware se encuentra en un nodo.
+Desarrollando el servidor en internet o en la nube (opcional).
+Graficar la arquitectura diseñada.
+Graficar el diagrama de protocolo.
+No usar websocket, socketio.
+Explicar el desarrollo del programa puntualmente.
+Desplegar el programa en redes.
+Validar las respectivas BD1 y BD2 los cambios
+Evaluar el desempeño haciendo un script donde el cliente ingrese aleatoriamente 1000
+nuevos registros.
+Poder ingresar en el cliente registros uno por uno.
+Como base realizar el código en terminal. En algunos casos dependiendo el “SOn”
+podrán realizar Interfaz Gráfica.
+Usar hilos para mejorar el desempeño e evitar corrupción de registros.
