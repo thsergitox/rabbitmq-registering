@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  node-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: registration-node-app
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      NODE_ENV: production
+      PORT: 8083
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin123
+    networks:
+      - registration_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  registration_network:
+    external: true 

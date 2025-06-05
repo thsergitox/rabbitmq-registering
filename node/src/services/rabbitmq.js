@@ -2,12 +2,14 @@ import amqp from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/config.js';
 import { rabbitmqLogger as logger } from '../utils/logger.js';
+import { withRetry, isRetryableError } from '../utils/retry.js';
 
 class RabbitMQService {
   constructor() {
     this.connection = null;
     this.channel = null;
     this.responseHandlers = new Map(); // Map to store response handlers by correlation ID
+    this.reconnecting = false;
   }
 
   async connect() {
@@ -16,8 +18,15 @@ class RabbitMQService {
       const url = `amqp://${username}:${password}@${host}:${port}${vhost}`;
       
       logger.info('Connecting to RabbitMQ...');
-      this.connection = await amqp.connect(url);
-      this.channel = await this.connection.createChannel();
+      
+      // Connect with retry logic
+      await withRetry(async () => {
+        this.connection = await amqp.connect(url);
+        this.channel = await this.connection.createChannel();
+      }, {
+        maxRetries: 5,
+        initialDelay: 2000,
+      }, 'RabbitMQ connection');
       
       // Setup exchange and queues
       await this.setupExchangeAndQueues();
@@ -30,15 +39,42 @@ class RabbitMQService {
       // Handle connection events
       this.connection.on('error', (err) => {
         logger.error('RabbitMQ connection error:', err);
+        if (isRetryableError(err)) {
+          this.handleReconnect();
+        }
       });
       
       this.connection.on('close', () => {
         logger.warn('RabbitMQ connection closed');
+        this.handleReconnect();
       });
       
     } catch (error) {
       logger.error('Failed to connect to RabbitMQ:', error);
       throw error;
+    }
+  }
+  
+  async handleReconnect() {
+    if (this.reconnecting) return;
+    
+    this.reconnecting = true;
+    this.connection = null;
+    this.channel = null;
+    
+    logger.info('Attempting to reconnect to RabbitMQ...');
+    
+    try {
+      await withRetry(() => this.connect(), {
+        maxRetries: -1, // Infinite retries
+        initialDelay: 5000,
+        maxDelay: 60000,
+      }, 'RabbitMQ reconnection');
+      
+      this.reconnecting = false;
+    } catch (error) {
+      logger.error('Failed to reconnect to RabbitMQ:', error);
+      this.reconnecting = false;
     }
   }
 

@@ -3,6 +3,11 @@
 import pika
 import logging
 from typing import Optional
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.retry import with_retry, RetryOptions, is_retryable_error
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +20,14 @@ class RabbitMQConnection:
         self.config = config
         self.connection: Optional[pika.BlockingConnection] = None
         self.channel: Optional[pika.channel.Channel] = None
+        self.is_reconnecting = False
 
+    @with_retry(
+        options=RetryOptions(max_retries=5, initial_delay=2.0),
+        context="RabbitMQ connection",
+    )
     def connect(self):
-        """Establish connection to RabbitMQ."""
+        """Establish connection to RabbitMQ with retry logic."""
         try:
             credentials = pika.PlainCredentials(
                 self.config.RABBITMQ_USERNAME, self.config.RABBITMQ_PASSWORD

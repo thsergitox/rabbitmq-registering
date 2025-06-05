@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: registration-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: dni_db
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./init-scripts:/docker-entrypoint-initdb.d/init-scripts:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - registration_network
+
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: registration-python-app
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      FLASK_ENV: production
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: dni_db
+      DB_USER: dbuser
+      DB_PASS: dbpass123
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin123
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - registration_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  mariadb_data:
+
+networks:
+  registration_network:
+    external: true 

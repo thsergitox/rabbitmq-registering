@@ -1,0 +1,83 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: user-service
+  
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:user_db}
+    username: ${DB_USER:dbuser}
+    password: ${DB_PASS:dbpass123}
+    driver-class-name: org.postgresql.Driver
+    # HikariCP connection pool settings
+    hikari:
+      pool-name: UserServicePool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      validation-timeout: 5000
+      connection-test-query: SELECT 1
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 25
+          batch_versioned_data: true
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+    show-sql: false
+  
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    # Connection pooling
+    cache:
+      channel:
+        size: 25
+        checkout-timeout: 5000
+    connection-timeout: 30000
+    # Publisher settings
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    # Thread pool settings
+    listener:
+      simple:
+        prefetch: 10
+        concurrency: 5
+        max-concurrency: 10
+        retry:
+          enabled: true
+          initial-interval: 3000
+          max-attempts: 3
+          max-interval: 10000
+          multiplier: 2
+
+logging:
+  level:
+    com.registration.userservice: INFO
+    org.springframework.amqp: INFO
+    org.hibernate.SQL: WARN
+
+# Thread pool configuration
+task:
+  execution:
+    pool:
+      core-size: 10
+      max-size: 20
+      queue-capacity: 100
+      keep-alive-seconds: 60 

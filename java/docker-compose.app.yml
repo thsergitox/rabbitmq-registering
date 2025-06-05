@@ -1,27 +1,35 @@
-# Development override configuration
-# This file is automatically loaded by docker-compose in development
-
 version: '3.8'
 
 services:
   postgres:
-    ports:
-      - "5432:5432"
+    image: postgres:16-alpine
+    container_name: registration-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: user_db
       POSTGRES_USER: dbuser
       POSTGRES_PASSWORD: dbpass123
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./init-scripts/01-fix-users.sql:/docker-entrypoint-initdb.d/02-fix-users.sql:ro
       - ./init-scripts/02-fix-schema.sql:/docker-entrypoint-initdb.d/03-fix-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - registration_network
 
   java-app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: registration-java-app
+    restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
@@ -31,36 +39,20 @@ services:
       DB_NAME: user_db
       DB_USER: dbuser
       DB_PASS: dbpass123
-      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: admin
       RABBITMQ_PASSWORD: admin123
     depends_on:
       postgres:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     networks:
       - registration_network
-    restart: unless-stopped
-
-  rabbitmq:
-    container_name: registration-rabbitmq
-    image: rabbitmq:3.13-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-    networks:
-      - registration_network
-    restart: unless-stopped
 
 volumes:
   postgres_data:

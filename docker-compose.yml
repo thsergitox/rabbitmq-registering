@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: registration-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - registration_network
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # PostgreSQL for Java Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: registration-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass123
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./java/db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./java/init-scripts/01-fix-users.sql:/docker-entrypoint-initdb.d/02-fix-users.sql:ro
+      - ./java/init-scripts/02-fix-schema.sql:/docker-entrypoint-initdb.d/03-fix-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d user_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - registration_network
+
+  # MariaDB for Python Service
+  mariadb:
+    image: mariadb:11
+    container_name: registration-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123
+      MYSQL_DATABASE: dni_db
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./python/db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - registration_network
+
+  # Java User Service (LP1)
+  java-app:
+    build:
+      context: ./java
+      dockerfile: Dockerfile
+    container_name: registration-java-app
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: user_db
+      DB_USER: dbuser
+      DB_PASS: dbpass123
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - registration_network
+
+  # Python Validator Service (LP2)
+  python-app:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: registration-python-app
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      FLASK_ENV: production
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: dni_db
+      DB_USER: dbuser
+      DB_PASS: dbpass123
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin123
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - registration_network
+
+  # Node.js Client Service (LP3)
+  node-app:
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+    container_name: registration-node-app
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      NODE_ENV: production
+      PORT: 8083
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin123
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - registration_network
+
+volumes:
+  postgres_data:
+  mariadb_data:
+  rabbitmq_data:
+
+networks:
+  registration_network:
+    name: registration_network
+    driver: bridge 
