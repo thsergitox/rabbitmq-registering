@@ -12,6 +12,7 @@ services:
     volumes:
       - ./definitions.json:/etc/rabbitmq/definitions.json:ro
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq.config:/etc/rabbitmq/rabbitmq.config
     command: >
       bash -c "
         rabbitmq-plugins enable rabbitmq_management &&
@@ -22,12 +23,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    networks:
-      - registro_network
 
 volumes:
   rabbitmq_data:
-
-networks:
-  registro_network:
-    driver: bridge

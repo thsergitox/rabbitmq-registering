@@ -1,0 +1,6 @@
+mysql-connector-python
+pika
+python-dotenv
+fastapi
+uvicorn
+asyncio-mqtt

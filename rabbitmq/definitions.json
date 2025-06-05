@@ -3,7 +3,7 @@
   "users": [
     {
       "name": "admin",
-      "password_hash": "gTkbW8yAkSWBuF7PBQFwL0J9x9tYy9T+QVd8pbr0u0Y2OLF0",
+      "password_hash": "AAAAAHxNlWe+5YA2o0hb2mpO2oLPoc8ZKDiqGk4ez+0UySWi",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": ["administrator"]
     }
@@ -62,7 +62,7 @@
       "vhost": "/",
       "destination": "queue_lp2",
       "destination_type": "queue",
-      "routing_key": "lp2.validate",
+      "routing_key": "lp3.signup",
       "arguments": {}
     },
     {
@@ -70,7 +70,7 @@
       "vhost": "/",
       "destination": "queue_lp1",
       "destination_type": "queue",
-      "routing_key": "lp1.persist",
+      "routing_key": "lp2.query.ok",
       "arguments": {}
     },
     {
@@ -78,7 +78,15 @@
       "vhost": "/",
       "destination": "queue_lp3_ack",
       "destination_type": "queue",
-      "routing_key": "lp3.ack",
+      "routing_key": "lp2.query.fail",
+      "arguments": {}
+    },
+    {
+      "source": "registro_bus",
+      "vhost": "/",
+      "destination": "queue_lp3_ack",
+      "destination_type": "queue",
+      "routing_key": "lp1.persisted",
       "arguments": {}
     }
   ]

@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bd1_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lp1_user
+      POSTGRES_PASSWORD: lp1_password
+      POSTGRES_DB: bd1_users
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -h localhost",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lp1_app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Assuming a Dockerfile exists or will be created
+    container_name: lp1_persister_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+      # If using pre-compiled JARs, mount the JAR and change the command
+      # - ./target/your-app.jar:/app/your-app.jar
+    ports:
+      - "8081:8080" # Assuming internal app port is 8080, adjust if different
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: bd1_users
+      DB_USER: lp1_user
+      DB_PASSWORD: lp1_password
+      RABBITMQ_HOST: 192.168.18.72 # This will be 'rabbitmq' when run with global compose, or an IP/hostname otherwise
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      RABBITMQ_QUEUE_PERSIST: queue_lp1
+      RABBITMQ_EXCHANGE: registro_bus
+      RABBITMQ_ROUTING_KEY_PERSISTED: lp1.persisted
+    # No explicit network definition
+
+volumes:
+  postgres_data:

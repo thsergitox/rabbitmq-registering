@@ -1,0 +1,33 @@
+services:
+  lp3_app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Assuming a Dockerfile exists or will be created
+    container_name: lp3_client_app
+    restart: unless-stopped
+    ports:
+      - "8083:8083" # Assuming Node app runs on port 8083 internally
+    volumes:
+      - ./:/app # Mount current directory to /app in container
+      # Ensure package.json and app.js are in the root or adjust paths
+    environment:
+      RABBITMQ_HOST: 192.168.18.72 # This will be 'rabbitmq' when run with global compose, or an IP/hostname otherwise
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      RABBITMQ_EXCHANGE: registro_bus
+      RABBITMQ_QUEUE_SIGNUP: lp3.signup
+      RABBITMQ_QUEUE_ACK: queue_lp3_ack
+      RABBITMQ_ROUTING_KEY_SIGNUP: lp3.signup
+      RABBITMQ_ROUTING_KEY_ACK: lp3.ack
+      APP_PORT: 8083 # Port the Node.js app should listen on internally
+    # No explicit network definition. It will depend on RabbitMQ being accessible.
+    # When run with docker-compose.global.yml, 'rabbitmq' service name will resolve.
+    # When run standalone, RABBITMQ_HOST must point to a running RabbitMQ instance.
+
+    # Healthcheck could be added if the Node app has a health endpoint
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5

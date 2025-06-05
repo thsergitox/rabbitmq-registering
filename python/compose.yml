@@ -1,0 +1,63 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: bd2_mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bd2_dni
+      MYSQL_USER: lp2_user
+      MYSQL_PASSWORD: lp2_password
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/init.sql
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u$${MYSQL_USER}",
+          "-p$${MYSQL_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lp2_app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Assuming a Dockerfile exists or will be created
+    container_name: lp2_validator_app
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./requirements.txt:/app/requirements.txt
+    ports:
+      - "8082:8080" # Exposing LP2 app, assuming internal port is 8080 (FastAPI default)
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: bd2_dni
+      DB_USER: lp2_user
+      DB_PASSWORD: lp2_password
+      RABBITMQ_HOST: 192.168.18.72 # This will be 'rabbitmq' when run with global compose, or an IP/hostname otherwise
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin123
+      RABBITMQ_QUEUE_VALIDATE: queue_lp2
+      RABBITMQ_EXCHANGE: registro_bus
+      RABBITMQ_ROUTING_KEY_OK: lp2.query.ok
+      RABBITMQ_ROUTING_KEY_FAIL: lp2.query.fail
+    # No explicit network definition, will use default Docker network if run standalone,
+    # or the global compose's default network if run via docker-compose.global.yml
+
+volumes:
+  mariadb_data:
